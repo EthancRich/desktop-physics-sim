@@ -1,0 +1,12 @@
+# Godot
+.godot/
+.import/
+/android/
+*.uid
+
+# C# build artifacts
+bin/
+obj/
+
+# VS Code
+.vscode/
