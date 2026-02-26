@@ -17,7 +17,7 @@ config/icon="res://icon.svg"
 
 [display]
 
-window/size/initial_position_type=0
+window/size/resizable=false
 window/per_pixel_transparency/allowed=true
 
 [dotnet]
@@ -31,4 +31,3 @@ project/assembly_name="Desktop Physics Sim"
 [rendering]
 
 rendering_device/driver.windows="d3d12"
-viewport/transparent_background=true
