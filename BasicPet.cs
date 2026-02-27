@@ -10,6 +10,9 @@ public partial class BasicPet : Node2D
 	private int _spriteWidth;
 	private int _spriteHeight;
 
+	// TODO: Implement air resistance
+	// TODO: Implement bounciness
+	// TODO: Implement wall bouncing
 	private const int DELTA_SCALAR = 1;
 	private Vector2 _gravityAccel = new Vector2( 0, 1000 );
 	private Vector2 _velocity = new Vector2( 0, 0 ); // Pixels per second
