@@ -1,5 +1,7 @@
 namespace DesktopPhysicsSim;
 
+using System;
+using System.Linq;
 using Godot;
 
 public partial class Main : Node2D
@@ -11,6 +13,8 @@ public partial class Main : Node2D
 	// Called when the node enters the scene tree for the first time.
 	public override void _Ready()
 	{
+		var windowList = DisplayServer.GetScreenCount();
+
 		// Create the first window -- home
 		var window = GetWindow();
 		window.AlwaysOnTop = true;
@@ -36,8 +40,15 @@ public partial class Main : Node2D
 		newWindow.Position = new Vector2I( window.Position.X - 50, window.Position.Y - 50 );
 		newWindow.Size = new Vector2I( sprite.Texture.GetWidth(), sprite.Texture.GetHeight() );
 
+
+		// TODO: Find a way to update the bounds when the pet leaves the bounds into another monitor
+		// How can it get to another monitor if it is bounded in by it?
+
 		newWindow.AddChild( pet );
 		GetTree().Root.AddChild( newWindow );
+
+		Rect2I bounds = DisplayServer.ScreenGetUsableRect( newWindow.CurrentScreen ); // This doesn't seem to be finding the right screen
+		pet.Initialize( bounds );
 
 		newWindow.Show();
 	}
