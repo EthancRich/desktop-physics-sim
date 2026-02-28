@@ -1,5 +1,6 @@
 namespace DesktopPhysicsSim;
 
+using System;
 using System.Collections.Generic;
 using Godot;
 
@@ -17,17 +18,23 @@ public partial class BasicPet : Node2D
 		}
 	}
 	private Window _petWindow;
+	private Vector2 _windowPosition;        // a more accurate count for position
 	private bool _dragging = false;
+	private bool _grounded = false;
 	private int _spriteWidth;
 	private int _spriteHeight;
 	private Rect2I _bounds;
 	private List<MouseSample> _samples = [];
-	// TODO: Implement air resistance
-	// TODO: Implement bounciness
-	// TODO: Implement wall bouncing
-	private const int DELTA_SCALAR = 1;
+	private float _bounciness = 0.5f;
+	private float _friction = 0.2f; // This is bounce friction, potentially rename
 	private Vector2 _gravityAccel = new Vector2( 0, 1000 );
 	private Vector2 _velocity = new Vector2( 0, 0 ); // Pixels per second
+	private float MIN_BOUNCE_VELOCITY = 50f;
+
+	// TODO: Implement Air Resistance
+	// TODO: Refactor variables, introduce FRICTION value when sliding on floor
+	// TODO: Implement movement across monitors
+	// TODO: Implement "charging up" speed with enough frames of high movement, color change? 
 
 	public void Initialize( Rect2I bounds )
 	{
@@ -39,56 +46,106 @@ public partial class BasicPet : Node2D
 		_bounds = bounds;
 	}
 
+	private void SetWindowPosition( Vector2 position )
+	{
+		_windowPosition = position;
+		_petWindow.Position = new Vector2I( (int)_windowPosition.X, (int)_windowPosition.Y );
+	}
+
 	public override void _Ready()
 	{
 		_spriteWidth = GetNode<Sprite2D>( "Sprite2D" ).Texture.GetWidth();
 		_spriteHeight = GetNode<Sprite2D>( "Sprite2D" ).Texture.GetHeight();
 		_petWindow = GetWindow();
+		_windowPosition = _petWindow.Position;
 	}
 
 	public override void _Process( double delta )
 	{
 		if ( !_dragging )
 		{
-			Vector2 deltaVec2 = new Vector2( (float)delta, (float)delta );
+			// Update petWindow position based on the current speed			
+			SetWindowPosition( _windowPosition + _velocity * (float)delta );
 
-			// Update petWindow position based on the current speed
-			Vector2 pos = (Vector2)_petWindow.Position;
-			pos += _velocity * deltaVec2 * DELTA_SCALAR;
-			_petWindow.Position = (Vector2I)pos;
+			// Clamp position into screen, update velocities from bounces
+			ResolveBounds();
+		}
+	}
 
-			// Goes off the left side of the screen
-			if ( _petWindow.Position.X < _bounds.Position.X )
+	private void ResolveBounds()
+	{
+		int minX = _bounds.Position.X;
+		int maxX = _bounds.End.X - _spriteWidth;
+		int minY = _bounds.Position.Y;
+		int maxY = _bounds.End.Y - _spriteHeight;
+
+		if ( _petWindow.Position.X < minX ) // Does referencing the float or just the int here matter?
+		{
+			BounceHorizontal( minX );
+		}
+		else if ( _petWindow.Position.X > maxX )
+		{
+			BounceHorizontal( maxX );
+		}
+
+		if ( _petWindow.Position.Y < minY )
+		{
+			BounceVertical( minY );
+		}
+		else if ( _petWindow.Position.Y > maxY )
+		{
+			BounceVertical( maxY );
+
+			if ( MathF.Abs( _velocity.Y ) < MIN_BOUNCE_VELOCITY )
 			{
-				_petWindow.Position = new Vector2I( _bounds.Position.X, _petWindow.Position.Y );
+				_velocity.Y = 0;
+				_grounded = true;
 			}
-
-			// Goes off the right side of the screen
-			if ( _petWindow.Position.X + _spriteWidth > _bounds.End.X )
+			else
 			{
-				_petWindow.Position = new Vector2I( _bounds.End.X - _spriteWidth, _petWindow.Position.Y );
-			}
-
-			// Goes off the top side of the screen
-			if ( _petWindow.Position.Y < _bounds.Position.Y )
-			{
-				_petWindow.Position = new Vector2I( _petWindow.Position.X, _bounds.Position.Y );
-			}
-
-			// Goes off the bottom side of the screen
-			if ( _petWindow.Position.Y + _spriteHeight > _bounds.End.Y )
-			{
-				_petWindow.Position = new Vector2I( _petWindow.Position.X, _bounds.End.Y - _spriteHeight );
+				_grounded = false;
 			}
 		}
 	}
 
+	private void BounceHorizontal( int clampX )
+	{
+		// Clamp Position
+		SetWindowPosition( new Vector2( clampX, _windowPosition.Y ) );
+
+		// Update Velocity
+		_velocity.X = -_velocity.X * _bounciness;
+		_velocity.Y *= 1.0f - _friction;
+	}
+
+	private void BounceVertical( int clampY )
+	{
+		// Clamp Position
+		SetWindowPosition( new Vector2( _windowPosition.X, clampY ) );
+
+		// Update Velocity
+		_velocity.Y = -_velocity.Y * _bounciness;
+		_velocity.X *= 1.0f - _friction;
+	}
+
+	// Wonder if this is still necessary? Like theoretically this is important
 	public override void _PhysicsProcess( double delta )
 	{
-		if ( !_dragging )
+		GD.Print( _velocity );
+		// GD.Print( _dragging, _grounded, MathF.Abs( _velocity.X ) < MIN_BOUNCE_VELOCITY );
+		if ( !_dragging && !_grounded )
 		{
-			Vector2 deltaVec2 = new Vector2( (float)delta, (float)delta );
-			_velocity += _gravityAccel * deltaVec2 * DELTA_SCALAR;
+			_velocity += _gravityAccel * (float)delta;
+		}
+
+		// Apply ground friction
+		else if ( !_dragging && _grounded )
+		{
+			_velocity.X = Mathf.MoveToward( _velocity.X, 0f, 6f );
+			if ( MathF.Abs( _velocity.X ) < MIN_BOUNCE_VELOCITY )
+			{
+				_velocity.X = 0;
+			}
 		}
 	}
 
@@ -128,7 +185,7 @@ public partial class BasicPet : Node2D
 
 		Vector2I mousePos = DisplayServer.MouseGetPosition();
 		Vector2I centeredPos = new Vector2I( mousePos.X - _spriteWidth / 2, mousePos.Y - _spriteHeight / 2 );
-		_petWindow.Position = centeredPos;
+		SetWindowPosition( centeredPos );
 	}
 
 	private void InitializeWindowVelocity()
