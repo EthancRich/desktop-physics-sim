@@ -1,6 +1,14 @@
 [gd_scene format=3 uid="uid://cuy52xtqp6eus"]
 
 [ext_resource type="Script" uid="uid://cx0f34ups550q" path="res://Main.cs" id="1_ig7tw"]
+[ext_resource type="PackedScene" uid="uid://b46w6v0iqauo2" path="res://BasicPet.tscn" id="2_h2yge"]
+[ext_resource type="Texture2D" uid="uid://bnwxo4cx0rjxb" path="res://icon.svg" id="3_h2yge"]
 
 [node name="Main" type="Node2D" unique_id=171341908]
 script = ExtResource("1_ig7tw")
+PetScene = ExtResource("2_h2yge")
+
+[node name="Icon" type="Sprite2D" parent="." unique_id=1114914547]
+modulate = Color(0.94509804, 0.35686275, 0.7176471, 1)
+position = Vector2(253, 139)
+texture = ExtResource("3_h2yge")

@@ -15,9 +15,14 @@ run/main_scene="uid://cuy52xtqp6eus"
 config/features=PackedStringArray("4.6", "C#", "Forward Plus")
 config/icon="res://icon.svg"
 
+[debug]
+
+settings/stdout/print_fps=true
+
 [display]
 
-window/size/initial_position_type=0
+window/size/resizable=false
+window/subwindows/embed_subwindows=false
 window/per_pixel_transparency/allowed=true
 
 [dotnet]
@@ -31,4 +36,3 @@ project/assembly_name="Desktop Physics Sim"
 [rendering]
 
 rendering_device/driver.windows="d3d12"
-viewport/transparent_background=true
